@@ -1,9 +1,11 @@
 """
 Core data models for DRISHTI intelligence schema.
 """
+
 from .actor import Actor
 from .alias import Alias
-from .base import BaseEntity, ProvenanceMixin, Evidence, EntityReference
+from .base import BaseEntity, ProvenanceMixin, EntityReference
+from .evidence import Evidence
 from .infrastructure import Infrastructure
 from .onion_service import OnionService
 from .pgp_key import PGPKey

@@ -1,6 +1,7 @@
 """
 Unit tests for Infrastructure model.
 """
+
 from datetime import datetime, timezone
 from uuid import UUID
 import pytest
@@ -15,9 +16,9 @@ def test_infrastructure_creation():
         ip_address="203.0.113.45",
         infrastructure_type="ip",
         source="test_source",
-        source_type="web"
+        source_type="web",
     )
-    
+
     assert infra.ip_address == "203.0.113.45"
     assert infra.infrastructure_type == "ip"
     assert infra.source == "test_source"
@@ -36,9 +37,9 @@ def test_infrastructure_with_domain():
         domain="example.com",
         infrastructure_type="domain",
         source="test_source",
-        source_type="dns"
+        source_type="dns",
     )
-    
+
     assert infra.domain == "example.com"
     assert infra.infrastructure_type == "domain"
     assert infra.source == "test_source"
@@ -51,9 +52,9 @@ def test_infrastructure_with_asn():
         asn="AS13335",
         infrastructure_type="asn",
         source="test_source",
-        source_type="bgp"
+        source_type="bgp",
     )
-    
+
     assert infra.asn == "AS13335"
     assert infra.infrastructure_type == "asn"
     assert infra.source == "test_source"
@@ -66,10 +67,13 @@ def test_infrastructure_with_certificate():
         ssl_certificate_fingerprint="sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
         infrastructure_type="certificate",
         source="test_source",
-        source_type="ssl"
+        source_type="ssl",
     )
-    
-    assert infra.ssl_certificate_fingerprint == "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd"
+
+    assert (
+        infra.ssl_certificate_fingerprint
+        == "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd"
+    )
     assert infra.infrastructure_type == "certificate"
     assert infra.source == "test_source"
     assert infra.source_type == "ssl"
@@ -78,29 +82,29 @@ def test_infrastructure_with_certificate():
 def test_infrastructure_relationships():
     """Test Infrastructure with relationships."""
     actor_ref = EntityReference(
-        id=UUID('99999999-9999-9999-9999-999999999999'),
+        id=UUID("99999999-9999-9999-9999-999999999999"),
         entity_type="Actor",
-        relationship="USES"
+        relationship="USES",
     )
     onion_ref = EntityReference(
-        id=UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+        id=UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
         entity_type="OnionService",
-        relationship="HOSTED_ON"
+        relationship="HOSTED_ON",
     )
-    
+
     infra = Infrastructure(
         ip_address="203.0.113.45",
         infrastructure_type="ip",
         source="test_source",
         source_type="web",
         actors=[actor_ref],
-        onion_services=[onion_ref]
+        onion_services=[onion_ref],
     )
-    
+
     assert len(infra.actors) == 1
-    assert infra.actors[0].id == UUID('99999999-9999-9999-9999-999999999999')
+    assert infra.actors[0].id == UUID("99999999-9999-9999-9999-999999999999")
     assert len(infra.onion_services) == 1
-    assert infra.onion_services[0].id == UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    assert infra.onion_services[0].id == UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 
 
 def test_infrastructure_timestamps():
@@ -114,7 +118,7 @@ def test_infrastructure_timestamps():
         source="test_source",
         source_type="web",
         collected_at=collected_at,
-        observation_timestamp=observation_timestamp
+        observation_timestamp=observation_timestamp,
     )
 
     assert infra.collected_at == collected_at
@@ -129,10 +133,10 @@ def test_infrastructure_confidence_validation():
         infrastructure_type="ip",
         source="test",
         source_type="test",
-        confidence=0.8
+        confidence=0.8,
     )
     assert infra.confidence == 0.8
-    
+
     # Invalid confidence
     with pytest.raises(ValidationError):
         Infrastructure(
@@ -140,5 +144,88 @@ def test_infrastructure_confidence_validation():
             infrastructure_type="ip",
             source="test",
             source_type="test",
-            confidence=1.5
+            confidence=1.5,
+        )
+
+
+def test_infrastructure_validation_valid_combinations():
+    """Test that valid infrastructure type combinations work."""
+    # Valid IP
+    infra = Infrastructure(
+        ip_address="203.0.113.45",
+        infrastructure_type="ip",
+        source="test",
+        source_type="web",
+    )
+    assert infra.infrastructure_type == "ip"
+    assert infra.ip_address == "203.0.113.45"
+
+    # Valid domain
+    infra = Infrastructure(
+        domain="example.com",
+        infrastructure_type="domain",
+        source="test",
+        source_type="dns",
+    )
+    assert infra.infrastructure_type == "domain"
+    assert infra.domain == "example.com"
+
+    # Valid ASN
+    infra = Infrastructure(
+        asn="AS13335", infrastructure_type="asn", source="test", source_type="bgp"
+    )
+    assert infra.infrastructure_type == "asn"
+    assert infra.asn == "AS13335"
+
+    # Valid certificate
+    infra = Infrastructure(
+        ssl_certificate_fingerprint="sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
+        infrastructure_type="certificate",
+        source="test",
+        source_type="ssl",
+    )
+    assert infra.infrastructure_type == "certificate"
+    assert (
+        infra.ssl_certificate_fingerprint
+        == "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd"
+    )
+
+
+def test_infrastructure_validation_invalid_combinations():
+    """Test that invalid infrastructure type combinations fail."""
+    # IP type without IP address
+    with pytest.raises(ValidationError):
+        Infrastructure(infrastructure_type="ip", source="test", source_type="web")
+
+    # Domain type without domain
+    with pytest.raises(ValidationError):
+        Infrastructure(infrastructure_type="domain", source="test", source_type="dns")
+
+    # ASN type without ASN
+    with pytest.raises(ValidationError):
+        Infrastructure(infrastructure_type="asn", source="test", source_type="bgp")
+
+    # Certificate type without certificate fingerprint
+    with pytest.raises(ValidationError):
+        Infrastructure(
+            infrastructure_type="certificate", source="test", source_type="ssl"
+        )
+
+    # Wrong field set for IP type
+    with pytest.raises(ValidationError):
+        Infrastructure(
+            ip_address="203.0.113.45",
+            domain="example.com",  # Should not be set for IP type
+            infrastructure_type="ip",
+            source="test",
+            source_type="web",
+        )
+
+    # Invalid infrastructure type
+    with pytest.raises(ValidationError):
+        Infrastructure(
+            ip_address="203.0.113.45",
+            infrastructure_type="invalid_type",
+            source="test",
+            source_type="web",
         )
