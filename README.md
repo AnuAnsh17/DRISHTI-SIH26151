@@ -1,4 +1,4 @@
-# DRISHTI — Evidence-Driven Threat Actor Attribution & Intelligence Platform
+# DRISHTI — Digital Reconnaissance & Intelligence System for Threat Identification
 
 **SIH Problem Statement: SIH26151**  
 *Blockchain & Cybersecurity Theme*
